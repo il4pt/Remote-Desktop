@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RemotePower - Android Material You (MD3) Önizleme</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@300;400;500;700&display=swap');
+
+    body {
+      font-family: 'Google Sans', 'Roboto', sans-serif;
+      background: #0B0D11;
+    }
+
+    .android-frame {
+      width: 390px;
+      height: 820px;
+      background: #111318;
+      border-radius: 44px;
+      box-shadow: 0 30px 80px -15px rgba(0, 0, 0, 0.9), 0 0 0 10px #1E2026, 0 0 0 12px #2B2D35;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .punch-hole {
+      width: 14px;
+      height: 14px;
+      background: #000;
+      border-radius: 50%;
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 50;
+      border: 1.5px solid #1E2026;
+    }
+
+    .md3-surface-container {
+      background: #191C22;
+      border-radius: 28px;
+    }
+    .md3-surface-high {
+      background: #22252C;
+      border-radius: 20px;
+    }
+
+    .md3-power-outer {
+      width: 184px;
+      height: 184px;
+      border-radius: 50%;
+      background: #191C22;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .md3-power-inner {
+      width: 136px;
+      height: 136px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    @keyframes md3PulseOnline {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(128, 233, 186, 0.35);
+      }
+      50% {
+        transform: scale(1.02);
+        box-shadow: 0 0 0 16px rgba(128, 233, 186, 0);
+      }
+    }
+
+    @keyframes md3PulseBooting {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 219, 92, 0.4);
+      }
+      50% {
+        transform: scale(1.03);
+        box-shadow: 0 0 0 16px rgba(255, 219, 92, 0);
+      }
+    }
+
+    .md3-state-online {
+      border: 3px solid #80E9BA;
+    }
+    .md3-state-online .md3-power-inner {
+      background: #80E9BA;
+      color: #003822;
+      animation: md3PulseOnline 2.4s infinite ease-in-out;
+    }
+
+    .md3-state-booting {
+      border: 3px solid #FFDB5C;
+    }
+    .md3-state-booting .md3-power-inner {
+      background: #FFDB5C;
+      color: #3B2F00;
+      animation: md3PulseBooting 1.2s infinite ease-in-out;
+    }
+
+    .md3-state-offline {
+      border: 3px solid #363942;
+    }
+    .md3-state-offline .md3-power-inner {
+      background: #242730;
+      color: #FFB4AB;
+    }
+
+    .android-gesture-bar {
+      width: 72px;
+      height: 4px;
+      background: #C4C6D0;
+      border-radius: 2px;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-6 antialiased text-white">
+
+  <!-- Üst Başlık & Açıklama -->
+  <div class="text-center mb-4">
+    <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#1E222A] text-xs font-medium text-[#80E9BA] mb-1.5 border border-[#80E9BA]/20">
+      <i class="fa-brands fa-android text-sm"></i>
+      Google Material You (Material Design 3)
+    </div>
+    <h1 class="text-2xl font-bold tracking-tight text-white">RemotePower Android Edition</h1>
+  </div>
+
+  <!-- ANDROID SELECT MENU -->
+  <div class="mb-5 flex items-center gap-3 bg-[#191C22] p-2.5 rounded-2xl border border-white/10 shadow-2xl z-50">
+    <span class="text-xs font-bold text-[#80E9BA] flex items-center pl-2">
+      <i class="fa-solid fa-list-check mr-1.5"></i> Sekme Seçin:
+    </span>
+    <select id="android-select-menu" onchange="switchScreen(this.value)" class="bg-[#242832] text-white text-xs font-bold py-2 px-4 rounded-xl border border-white/10 focus:outline-none focus:border-[#80E9BA] cursor-pointer shadow-lg">
+      <option value="dashboard">⚡ Kontrol Paneli</option>
+      <option value="live-screen">📺 Canlı Masaüstü Ekranı</option>
+      <option value="app-launcher">🚀 Program Başlatıcı (Apps)</option>
+      <option value="automation">⏱️ Otomasyon & Günlük</option>
+      <option value="devices">💻 Cihazlar</option>
+      <option value="settings">⚙️ Ayarlar</option>
+    </select>
+  </div>
+
+  <!-- Android Telefon Mockup -->
+  <div class="android-frame flex flex-col select-none relative">
+    
+    <!-- Punch-hole Kamera -->
+    <div class="punch-hole"></div>
+
+    <!-- Android Status Bar -->
+    <div class="pt-3.5 px-6 flex justify-between items-center text-[12px] font-medium text-gray-300 z-40">
+      <span class="font-bold">16:05</span>
+      <div class="flex items-center space-x-2">
+        <i class="fa-solid fa-wifi text-[11px]"></i>
+        <i class="fa-solid fa-signal text-[11px]"></i>
+        <div class="flex items-center font-semibold text-[11px]">
+          <span class="mr-1">%85</span>
+          <i class="fa-solid fa-battery-three-quarters text-xs text-[#80E9BA]"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SEKME 1: DASHBOARD ==================== -->
+    <div id="screen-dashboard" class="flex-1 flex flex-col px-5 pt-3 pb-6 overflow-y-auto">
+      
+      <div class="flex items-center justify-between mb-2">
+        <div>
+          <div class="text-[10px] font-medium uppercase tracking-wider text-gray-400">Yönetilen Cihaz</div>
+          <div class="flex items-center space-x-1 mt-0.5 cursor-pointer">
+            <span class="text-base font-bold text-white tracking-tight">Ofis Masaüstü</span>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="setSelectAndSwitch('live-screen')" class="w-9 h-9 rounded-full bg-[#1F222A] flex items-center justify-center text-[#80E9BA]">
+            <i class="fa-solid fa-tv text-xs"></i>
+          </button>
+          <button onclick="setSelectAndSwitch('app-launcher')" class="w-9 h-9 rounded-full bg-[#1F222A] flex items-center justify-center text-blue-400">
+            <i class="fa-solid fa-rocket text-xs"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex justify-start my-1">
+        <div id="status-chip" class="px-3.5 py-1 rounded-full text-xs font-semibold flex items-center space-x-2 bg-[#2E1F1F] text-[#FFB4AB]">
+          <span id="status-dot" class="w-2 h-2 rounded-full bg-[#FF897D]"></span>
+          <span id="status-text">KAPALI</span>
+        </div>
+      </div>
+
+      <!-- Güç Butonu -->
+      <div class="flex-1 flex flex-col items-center justify-center py-2">
+        <div class="cursor-pointer" onclick="togglePower()">
+          <div id="power-btn" class="md3-power-outer md3-state-offline">
+            <div class="md3-power-inner">
+              <i id="power-icon" class="fa-solid fa-power-off text-4xl"></i>
+            </div>
+          </div>
+        </div>
+        <div class="mt-3 text-center">
+          <p class="text-xs font-medium text-gray-300" id="power-title">Başlatmak İçin Dokunun</p>
+          <p class="text-[10px] text-gray-500" id="power-subtitle">Wake-on-WAN / Magic Packet</p>
+        </div>
+      </div>
+
+      <!-- Metrik Alanı -->
+      <div id="metrics-card" class="md3-surface-container p-3.5 mb-3 transition-all">
+        <div id="md3-metrics-offline" class="block">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-bold text-[#FFB4AB]">GÜÇ KAPALI (STANDBY)</span>
+            <span class="text-[10px] font-bold text-gray-400 bg-[#252830] px-2 py-0.5 rounded-md">S5 SOFT-OFF</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="md3-surface-high p-2.5">
+              <div class="text-[10px] text-gray-400">WoL Dinleme</div>
+              <div class="text-xs font-bold text-white mt-0.5">UDP Port 9</div>
+            </div>
+            <div class="md3-surface-high p-2.5">
+              <div class="text-[10px] text-gray-400">Anakart Besleme</div>
+              <div class="text-xs font-bold text-white mt-0.5">5V Standby</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="md3-metrics-online" class="hidden">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-bold text-gray-200">Sistem Durumu</span>
+            <span class="text-[10px] font-bold text-[#80E9BA] bg-[#202E28] px-2 py-0.5 rounded-md">ONLINE</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="md3-surface-high p-2.5">
+              <div class="text-[10px] text-gray-400">CPU Yükü</div>
+              <div class="text-sm font-bold text-white" id="cpu-val">%14.2</div>
+            </div>
+            <div class="md3-surface-high p-2.5">
+              <div class="text-[10px] text-gray-400">RAM Yükü</div>
+              <div class="text-sm font-bold text-white" id="ram-val">%36.8</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hızlı İşlemler -->
+      <div class="grid grid-cols-4 gap-2">
+        <button onclick="handleAction('Kapat')" class="md3-surface-high hover:bg-[#341F23] p-2.5 flex flex-col items-center justify-center">
+          <i class="fa-solid fa-power-off text-[#FFB4AB] text-xs mb-1"></i>
+          <span class="text-[10px] font-medium text-gray-200">Kapat</span>
+        </button>
+        <button onclick="handleAction('Yeniden Başlat')" class="md3-surface-high hover:bg-[#332A18] p-2.5 flex flex-col items-center justify-center">
+          <i class="fa-solid fa-arrow-rotate-right text-[#FFDB5C] text-xs mb-1"></i>
+          <span class="text-[10px] font-medium text-gray-200">Reset</span>
+        </button>
+        <button onclick="handleAction('Kilitle')" class="md3-surface-high hover:bg-[#1E293B] p-2.5 flex flex-col items-center justify-center">
+          <i class="fa-solid fa-lock text-[#9ABDF0] text-xs mb-1"></i>
+          <span class="text-[10px] font-medium text-gray-200">Kilitle</span>
+        </button>
+        <button onclick="handleAction('Uyku Modu')" class="md3-surface-high hover:bg-[#2E203B] p-2.5 flex flex-col items-center justify-center">
+          <i class="fa-solid fa-moon text-[#D4BBFF] text-xs mb-1"></i>
+          <span class="text-[10px] font-medium text-gray-200">Uyku</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ==================== SEKME 2: CANLI EKRAN (STREAM) ==================== -->
+    <div id="screen-live-screen" class="flex-1 flex flex-col px-5 pt-3 pb-6 hidden overflow-y-auto">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-tv text-[#80E9BA] text-sm"></i>
+          <h2 class="text-base font-bold text-white tracking-tight">Canlı Masaüstü Ekranı</h2>
+        </div>
+        <span id="android-screen-fps" class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#202E28] text-[#80E9BA]">30 FPS</span>
+      </div>
+
+      <div class="w-full bg-[#0E121A] rounded-2xl border border-white/15 overflow-hidden shadow-2xl relative mb-3">
+        <div id="android-screen-offline" class="h-56 flex flex-col items-center justify-center p-6 text-center">
+          <i class="fa-solid fa-desktop text-4xl text-gray-600 mb-2"></i>
+          <span class="text-xs font-bold text-gray-300">EKRAN SİNYALİ YOK</span>
+          <span class="text-[10px] text-gray-500 mt-1">Bilgisayar açıldığında canlı görüntü buraya aktarılır.</span>
+          <button onclick="togglePower()" class="mt-3 px-4 py-1.5 rounded-full bg-[#80E9BA] text-[#003822] text-[11px] font-bold">
+            Bilgisayarı Aç
+          </button>
+        </div>
+
+        <div id="android-screen-online" class="h-56 hidden relative bg-cover bg-center overflow-hidden" style="background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600');">
+          <div id="android-virtual-window" class="absolute top-6 left-10 right-6 bottom-8 bg-[#181B22]/95 rounded-xl border border-white/20 shadow-2xl p-2.5 flex flex-col">
+            <div class="flex justify-between items-center border-b border-white/10 pb-1 mb-1">
+              <span id="android-window-title" class="text-[10px] font-bold text-white">
+                <i class="fa-brands fa-steam mr-1 text-blue-400"></i> Steam - Kütüphane
+              </span>
+              <span class="w-2 h-2 rounded-full bg-green-400"></span>
+            </div>
+            <div class="flex-1 flex flex-col items-center justify-center text-center">
+              <i id="android-window-icon" class="fa-brands fa-steam text-3xl text-white/40 mb-1"></i>
+              <span id="android-window-status" class="text-[9px] text-gray-300">Uygulama arka planda aktif</span>
+            </div>
+          </div>
+
+          <div class="absolute bottom-0 inset-x-0 h-6 bg-[#12151D]/95 flex items-center justify-between px-3 text-[10px] border-t border-white/10">
+            <div class="flex items-center space-x-2 text-gray-300">
+              <i class="fa-brands fa-windows text-blue-400"></i>
+              <i class="fa-brands fa-steam text-[9px] text-blue-400"></i>
+              <i class="fa-brands fa-chrome text-[9px] text-yellow-400"></i>
+            </div>
+            <span class="text-[8px] text-gray-400 font-mono">16:05</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="md3-surface-container p-3 flex items-center justify-between">
+        <span class="text-xs text-gray-300">1080p Stream Aktif</span>
+        <button onclick="setSelectAndSwitch('app-launcher')" class="px-3 py-1 rounded-full bg-[#80E9BA] text-[#003822] text-xs font-bold">
+          Program Başlat
+        </button>
+      </div>
+    </div>
+
+    <!-- ==================== SEKME 3: PROGRAM BAŞLATICI ==================== -->
+    <div id="screen-app-launcher" class="flex-1 flex flex-col px-5 pt-3 pb-6 hidden overflow-y-auto">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-rocket text-[#80E9BA] text-sm"></i>
+          <h2 class="text-base font-bold text-white tracking-tight">Program Başlatıcı</h2>
+        </div>
+        <span id="android-app-badge" class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">KAPALI</span>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2.5">
+        <div onclick="launchRemoteApp('steam', 'Steam', 'fa-brands fa-steam text-blue-400')" class="md3-surface-container p-3 flex flex-col items-center text-center cursor-pointer hover:bg-[#202530] transition-all">
+          <i class="fa-brands fa-steam text-2xl text-blue-400 mb-1.5"></i>
+          <span class="text-xs font-bold text-white">Steam</span>
+          <span class="text-[9px] text-gray-400">Oyunlar</span>
+        </div>
+
+        <div onclick="launchRemoteApp('chrome', 'Chrome', 'fa-brands fa-chrome text-yellow-400')" class="md3-surface-container p-3 flex flex-col items-center text-center cursor-pointer hover:bg-[#202530] transition-all">
+          <i class="fa-brands fa-chrome text-2xl text-yellow-400 mb-1.5"></i>
+          <span class="text-xs font-bold text-white">Chrome</span>
+          <span class="text-[9px] text-gray-400">Tarayıcı</span>
+        </div>
+
+        <div onclick="launchRemoteApp('vscode', 'VS Code', 'fa-solid fa-code text-blue-400')" class="md3-surface-container p-3 flex flex-col items-center text-center cursor-pointer hover:bg-[#202530] transition-all">
+          <i class="fa-solid fa-code text-2xl text-blue-400 mb-1.5"></i>
+          <span class="text-xs font-bold text-white">VS Code</span>
+          <span class="text-[9px] text-gray-400">Editör</span>
+        </div>
+
+        <div onclick="launchRemoteApp('spotify', 'Spotify', 'fa-brands fa-spotify text-green-400')" class="md3-surface-container p-3 flex flex-col items-center text-center cursor-pointer hover:bg-[#202530] transition-all">
+          <i class="fa-brands fa-spotify text-2xl text-green-400 mb-1.5"></i>
+          <span class="text-xs font-bold text-white">Spotify</span>
+          <span class="text-[9px] text-gray-400">Müzik</span>
+        </div>
+
+        <div onclick="launchRemoteApp('discord', 'Discord', 'fa-brands fa-discord text-indigo-400')" class="md3-surface-container p-3 flex flex-col items-center text-center cursor-pointer hover:bg-[#202530] transition-all">
+          <i class="fa-brands fa-discord text-2xl text-indigo-400 mb-1.5"></i>
+          <span class="text-xs font-bold text-white">Discord</span>
+          <span class="text-[9px] text-gray-400">İletişim</span>
+        </div>
+
+        <div onclick="launchRemoteApp('terminal', 'Terminal', 'fa-solid fa-terminal text-gray-300')" class="md3-surface-container p-3 flex flex-col items-center text-center cursor-pointer hover:bg-[#202530] transition-all">
+          <i class="fa-solid fa-terminal text-2xl text-gray-300 mb-1.5"></i>
+          <span class="text-xs font-bold text-white">Terminal</span>
+          <span class="text-[9px] text-gray-400">Konsol</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SEKME 4: OTOMASYON ==================== -->
+    <div id="screen-automation" class="flex-1 flex flex-col px-5 pt-3 pb-6 hidden overflow-y-auto">
+      <h2 class="text-base font-bold text-white mb-3">Otomasyon & Günlük</h2>
+      <div class="md3-surface-container p-3 mb-3 flex justify-between items-center">
+        <span class="text-xs text-white">WoL Port 9 Testi</span>
+        <button onclick="alert('Ping: 16ms (Port Açık)');" class="px-3 py-1 rounded-full bg-[#80E9BA] text-[#003822] text-xs font-bold">
+          Test Et
+        </button>
+      </div>
+    </div>
+
+    <!-- ==================== SEKME 5: CİHAZLAR ==================== -->
+    <div id="screen-devices" class="flex-1 flex-col px-5 pt-3 pb-6 hidden overflow-y-auto">
+      <h2 class="text-base font-bold text-white mb-3">Cihaz Yönetimi</h2>
+      <div class="md3-surface-container p-3">
+        <span class="text-xs text-white font-bold">Ofis Masaüstü (Aktif)</span>
+      </div>
+    </div>
+
+    <!-- ==================== SEKME 6: AYARLAR ==================== -->
+    <div id="screen-settings" class="flex-1 flex-col px-5 pt-3 pb-6 hidden overflow-y-auto">
+      <h2 class="text-base font-bold text-white mb-3">Ayarlar</h2>
+      <div class="md3-surface-container p-3">
+        <span class="text-xs text-white">Parmak İzi Kilidi Aktif</span>
+      </div>
+    </div>
+
+    <!-- Android 14 Gesture Bar -->
+    <div class="h-5 flex items-center justify-center z-40">
+      <div class="android-gesture-bar"></div>
+    </div>
+  </div>
+
+  <script>
+    let currentStatus = "offline";
+
+    function setSelectAndSwitch(screenId) {
+      document.getElementById("android-select-menu").value = screenId;
+      switchScreen(screenId);
+    }
+
+    function switchScreen(screen) {
+      const screens = ['dashboard', 'live-screen', 'app-launcher', 'automation', 'devices', 'settings'];
+      screens.forEach(s => {
+        const el = document.getElementById("screen-" + s);
+        if (el) el.classList.add("hidden");
+      });
+
+      const activeEl = document.getElementById("screen-" + screen);
+      if (activeEl) {
+        activeEl.classList.remove("hidden");
+        activeEl.classList.add("flex");
+      }
+    }
+
+    function togglePower() {
+      const btn = document.getElementById("power-btn");
+      const chip = document.getElementById("status-chip");
+      const dot = document.getElementById("status-dot");
+      const text = document.getElementById("status-text");
+      const title = document.getElementById("power-title");
+      const subtitle = document.getElementById("power-subtitle");
+      const offlineView = document.getElementById("md3-metrics-offline");
+      const onlineView = document.getElementById("md3-metrics-online");
+      const screenOffline = document.getElementById("android-screen-offline");
+      const screenOnline = document.getElementById("android-screen-online");
+      const appBadge = document.getElementById("android-app-badge");
+
+      if (currentStatus === "offline") {
+        currentStatus = "booting";
+        btn.className = "md3-power-outer md3-state-booting";
+        chip.className = "px-3.5 py-1 rounded-full text-xs font-semibold flex items-center space-x-2 bg-[#332A18] text-[#FFDB5C]";
+        dot.className = "w-2 h-2 rounded-full bg-[#FFDB5C] animate-ping";
+        text.innerText = "BAŞLATILIYOR...";
+        title.innerText = "Sihirli Paket İletildi";
+        subtitle.innerText = "Bilgisayar açılıyor, bekleniyor...";
+
+        setTimeout(() => {
+          currentStatus = "online";
+          btn.className = "md3-power-outer md3-state-online";
+          chip.className = "px-3.5 py-1 rounded-full text-xs font-semibold flex items-center space-x-2 bg-[#1B2F25] text-[#80E9BA]";
+          dot.className = "w-2 h-2 rounded-full bg-[#80E9BA]";
+          text.innerText = "ÇEVRİMİÇİ";
+          title.innerText = "Bilgisayar Açık ve Bağlı";
+          subtitle.innerText = "Kapatmak için dokunun";
+
+          offlineView.classList.add("hidden");
+          onlineView.classList.remove("hidden");
+          screenOffline.classList.add("hidden");
+          screenOnline.classList.remove("hidden");
+
+          appBadge.className = "text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#202E28] text-[#80E9BA]";
+          appBadge.innerText = "AÇIK";
+        }, 2200);
+
+      } else if (currentStatus === "online") {
+        if (confirm("Bilgisayarı kapatmak istediğinize emin misiniz?")) {
+          currentStatus = "offline";
+          btn.className = "md3-power-outer md3-state-offline";
+          chip.className = "px-3.5 py-1 rounded-full text-xs font-semibold flex items-center space-x-2 bg-[#2E1F1F] text-[#FFB4AB]";
+          dot.className = "w-2 h-2 rounded-full bg-[#FF897D]";
+          text.innerText = "KAPALI";
+          title.innerText = "Başlatmak İçin Dokunun";
+          subtitle.innerText = "Wake-on-WAN / Magic Packet";
+
+          onlineView.classList.add("hidden");
+          offlineView.classList.remove("hidden");
+          screenOnline.classList.add("hidden");
+          screenOffline.classList.remove("hidden");
+
+          appBadge.className = "text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400";
+          appBadge.innerText = "KAPALI";
+        }
+      }
+    }
+
+    function launchRemoteApp(appId, appName, iconClass) {
+      if (currentStatus !== "online") {
+        alert("⚠️ Bilgisayar kapalı! Program başlatabilmek için önce bilgisayarı açmalısınız.");
+        return;
+      }
+
+      document.getElementById("android-window-title").innerHTML = `<i class="${iconClass} mr-1"></i> ${appName} (Aktif)`;
+      document.getElementById("android-window-icon").className = iconClass + " text-3xl mb-1";
+      document.getElementById("android-window-status").innerText = `${appName} penceresi açıldı`;
+
+      if (confirm(`🚀 ${appName} bilgisayarınızda başlatıldı!\n\nAçılan programı Canlı Ekranda görmek ister misiniz?`)) {
+        setSelectAndSwitch('live-screen');
+      }
+    }
+
+    function handleAction(name) {
+      if (currentStatus !== "online") {
+        alert("Bu işlem için bilgisayarın açık olması gerekir!");
+        return;
+      }
+      alert(name + " komutu parmak izi onayıyla iletildi!");
+      if (name === "Kapat") togglePower();
+    }
+  </script>
+</body>
+</html>
